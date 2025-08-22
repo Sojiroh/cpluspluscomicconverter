@@ -45,31 +45,31 @@ cmake --build build
 
 ```bash
 # Convert single PDF to images
-./build/c__omicconverter document.pdf ./output
+./build/cpluspluscomicconverter document.pdf ./output
 
 # Convert to CBZ archive
-./build/c__omicconverter document.pdf ./output --cbz
+./build/cpluspluscomicconverter document.pdf ./output --cbz
 
 # Convert and clean up temporary files
-./build/c__omicconverter document.pdf ./output --cbz --clean
+./build/cpluspluscomicconverter document.pdf ./output --cbz --clean
 
 # Batch process entire directory
-./build/c__omicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
+./build/cpluspluscomicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
 ```
 
 ### Command Line Options
 
 ```
-Usage: c__omicconverter <pdf_file_or_directory> [output_directory] [--cbz] [--clean]
+Usage: cpluspluscomicconverter <pdf_file_or_directory> [output_directory] [--cbz] [--clean]
 
 Options:
   --cbz     Create a CBZ (Comic Book Archive) file instead of separate images
   --clean   Remove individual image files after creating CBZ (requires --cbz)
 
 Examples:
-  c__omicconverter document.pdf ./extracted_images
-  c__omicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
-  c__omicconverter document.pdf ./extracted_images --cbz --clean
+  cpluspluscomicconverter document.pdf ./extracted_images
+  cpluspluscomicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
+  cpluspluscomicconverter document.pdf ./extracted_images --cbz --clean
 ```
 
 ## Output Formats
