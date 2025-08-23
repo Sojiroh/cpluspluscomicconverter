@@ -3,9 +3,11 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 namespace poppler {
     class document;
+    class page_renderer;
 }
 
 class PDFImageExtractor {
@@ -28,8 +30,10 @@ public:
 
 private:
     std::unique_ptr<poppler::document> document_;
+    std::unique_ptr<poppler::page_renderer> renderer_;
     std::string pdf_path_;
     bool valid_;
+    mutable std::mutex renderer_mutex_;
     
     std::string generate_image_filename(int page_index, int image_index, const std::string& format) const;
 };
