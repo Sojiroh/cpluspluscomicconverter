@@ -30,8 +30,9 @@ std::vector<std::string> find_pdf_files(const std::string& directory) {
     return pdf_files;
 }
 
-bool process_single_pdf(const std::string& pdf_path, const std::string& base_output_dir, 
-                       bool create_cbz, bool clean_images) {
+bool process_single_pdf(const std::string& pdf_path, const std::string& base_output_dir,
+                       bool create_cbz, bool clean_images, const std::string& format,
+                       int quality, double dpi) {
     std::string pdf_name = std::filesystem::path(pdf_path).stem().string();
     std::string output_dir = std::filesystem::path(base_output_dir) / pdf_name;
     
@@ -39,7 +40,7 @@ bool process_single_pdf(const std::string& pdf_path, const std::string& base_out
     std::cout << "Processing: " << pdf_path << std::endl;
     std::cout << "Output directory: " << output_dir << std::endl;
     
-    PDFImageExtractor extractor(pdf_path);
+    PDFImageExtractor extractor(pdf_path, format, quality, dpi);
     
     if (!extractor.is_valid()) {
         std::cerr << "Error: Could not load PDF file: " << pdf_path << std::endl;
@@ -85,14 +86,18 @@ bool process_single_pdf(const std::string& pdf_path, const std::string& base_out
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <pdf_file_or_directory> [output_directory] [--cbz] [--clean]" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <pdf_file_or_directory> [output_directory] [options]" << std::endl;
         std::cout << "Options:" << std::endl;
-        std::cout << "  --cbz     Create a CBZ (Comic Book Archive) file instead of separate images" << std::endl;
-        std::cout << "  --clean   Remove individual image files after creating CBZ (requires --cbz)" << std::endl;
+        std::cout << "  --cbz                Create a CBZ (Comic Book Archive) file instead of separate images" << std::endl;
+        std::cout << "  --clean              Remove individual image files after creating CBZ (requires --cbz)" << std::endl;
+        std::cout << "  --format <format>    Output format: png or jpeg (default: jpeg)" << std::endl;
+        std::cout << "  --quality <1-100>    JPEG quality (default: 80, ignored for PNG)" << std::endl;
+        std::cout << "  --dpi <value>        DPI for image extraction (default: 150)" << std::endl;
         std::cout << "Examples:" << std::endl;
         std::cout << "  " << argv[0] << " document.pdf ./extracted_images" << std::endl;
         std::cout << "  " << argv[0] << " /path/to/pdfs/ ./converted_comics --cbz --clean" << std::endl;
-        std::cout << "  " << argv[0] << " document.pdf ./extracted_images --cbz --clean" << std::endl;
+        std::cout << "  " << argv[0] << " document.pdf ./output --format png --dpi 300" << std::endl;
+        std::cout << "  " << argv[0] << " document.pdf ./output --format jpeg --quality 90 --dpi 150" << std::endl;
         return 1;
     }
     
@@ -100,6 +105,9 @@ int main(int argc, char* argv[]) {
     std::string output_dir = "./converted_comics";
     bool create_cbz = false;
     bool clean_images = false;
+    std::string format = "jpeg";
+    int quality = 80;
+    double dpi = 150.0;
     
     // Parse arguments
     for (int i = 2; i < argc; ++i) {
@@ -108,6 +116,24 @@ int main(int argc, char* argv[]) {
             create_cbz = true;
         } else if (arg == "--clean") {
             clean_images = true;
+        } else if (arg == "--format" && i + 1 < argc) {
+            format = argv[++i];
+            if (format != "png" && format != "jpeg") {
+                std::cerr << "Error: Format must be 'png' or 'jpeg'" << std::endl;
+                return 1;
+            }
+        } else if (arg == "--quality" && i + 1 < argc) {
+            quality = std::stoi(argv[++i]);
+            if (quality < 1 || quality > 100) {
+                std::cerr << "Error: Quality must be between 1 and 100" << std::endl;
+                return 1;
+            }
+        } else if (arg == "--dpi" && i + 1 < argc) {
+            dpi = std::stod(argv[++i]);
+            if (dpi <= 0) {
+                std::cerr << "Error: DPI must be greater than 0" << std::endl;
+                return 1;
+            }
         } else if (arg[0] != '-') {
             output_dir = arg;
         }
@@ -144,13 +170,18 @@ int main(int argc, char* argv[]) {
     }
     
     std::cout << "Output directory: " << output_dir << std::endl;
+    std::cout << "Image format: " << format << std::endl;
+    if (format == "jpeg") {
+        std::cout << "JPEG quality: " << quality << std::endl;
+    }
+    std::cout << "DPI: " << dpi << std::endl;
     if (create_cbz) {
         std::cout << "Output format: CBZ (Comic Book Archive)" << std::endl;
         if (clean_images) {
             std::cout << "Clean mode: Individual images will be removed after CBZ creation" << std::endl;
         }
     } else {
-        std::cout << "Output format: Individual PNG images" << std::endl;
+        std::cout << "Output format: Individual " << format << " images" << std::endl;
     }
     
     // Process all PDF files
@@ -158,7 +189,7 @@ int main(int argc, char* argv[]) {
     int failed = 0;
     
     for (const auto& pdf_path : pdf_files) {
-        if (process_single_pdf(pdf_path, output_dir, create_cbz, clean_images)) {
+        if (process_single_pdf(pdf_path, output_dir, create_cbz, clean_images, format, quality, dpi)) {
             successful++;
         } else {
             failed++;

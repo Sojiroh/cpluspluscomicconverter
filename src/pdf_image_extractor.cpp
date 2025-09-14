@@ -10,8 +10,8 @@
 #include <future>
 #include <algorithm>
 
-PDFImageExtractor::PDFImageExtractor(const std::string& pdf_path) 
-    : pdf_path_(pdf_path), valid_(false) {
+PDFImageExtractor::PDFImageExtractor(const std::string& pdf_path, const std::string& format, int quality, double dpi)
+    : pdf_path_(pdf_path), valid_(false), format_(format), quality_(quality), dpi_(dpi) {
     
     try {
         document_ = std::unique_ptr<poppler::document>(
@@ -65,24 +65,29 @@ std::vector<PDFImageExtractor::ImageInfo> PDFImageExtractor::extract_images_from
         }
         
         // Use shared page renderer to convert page to image
-        double dpi = 150.0;
         poppler::image page_image;
         {
             std::lock_guard<std::mutex> lock(renderer_mutex_);
-            page_image = renderer_->render_page(page.get(), dpi, dpi);
+            page_image = renderer_->render_page(page.get(), dpi_, dpi_);
         }
         
         if (page_image.is_valid()) {
-            std::string format = "png";
-            std::string filename = generate_image_filename(page_index, 0, format);
+            std::string filename = generate_image_filename(page_index, 0, format_);
             std::string full_path = std::filesystem::path(output_dir) / filename;
-            
-            if (page_image.save(full_path, format)) {
+
+            bool save_success;
+            if (format_ == "jpeg") {
+                save_success = page_image.save(full_path, format_, quality_);
+            } else {
+                save_success = page_image.save(full_path, format_);
+            }
+
+            if (save_success) {
                 ImageInfo info;
                 info.name = filename;
                 info.width = page_image.width();
                 info.height = page_image.height();
-                info.format = format;
+                info.format = format_;
                 extracted_images.push_back(info);
                 
                 std::cout << "Extracted page as image: " << filename 
