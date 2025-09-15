@@ -13,4 +13,5 @@ add_executable(cpluspluscomicconverter src/main.cpp src/pdf_image_extractor.cpp 
 
 target_link_libraries(cpluspluscomicconverter ${POPPLER_LIBRARIES} ${LIBZIP_LIBRARIES})
 target_include_directories(cpluspluscomicconverter PRIVATE ${POPPLER_INCLUDE_DIRS} ${LIBZIP_INCLUDE_DIRS})
+target_link_directories(cpluspluscomicconverter PRIVATE ${POPPLER_LIBRARY_DIRS} ${LIBZIP_LIBRARY_DIRS})
 target_compile_options(cpluspluscomicconverter PRIVATE ${POPPLER_CFLAGS_OTHER} ${LIBZIP_CFLAGS_OTHER})

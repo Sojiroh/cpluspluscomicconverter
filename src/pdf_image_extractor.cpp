@@ -1,8 +1,8 @@
 #include "pdf_image_extractor.h"
-#include <poppler/cpp/poppler-document.h>
-#include <poppler/cpp/poppler-page.h>
-#include <poppler/cpp/poppler-image.h>
-#include <poppler/cpp/poppler-page-renderer.h>
+#include <poppler-document.h>
+#include <poppler-page.h>
+#include <poppler-image.h>
+#include <poppler-page-renderer.h>
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -12,12 +12,12 @@
 
 PDFImageExtractor::PDFImageExtractor(const std::string& pdf_path, const std::string& format, int quality, double dpi)
     : pdf_path_(pdf_path), valid_(false), format_(format), quality_(quality), dpi_(dpi) {
-    
+
     try {
         document_ = std::unique_ptr<poppler::document>(
             poppler::document::load_from_file(pdf_path_)
         );
-        
+
         if (document_ && !document_->is_locked()) {
             renderer_ = std::make_unique<poppler::page_renderer>();
             renderer_->set_render_hint(poppler::page_renderer::antialiasing, true);
@@ -27,7 +27,7 @@ PDFImageExtractor::PDFImageExtractor(const std::string& pdf_path, const std::str
             std::cerr << "Failed to load PDF or PDF is locked: " << pdf_path_ << std::endl;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error loading PDF: " << e.what() << std::endl;
+        std::cerr << "Error loading PDF : " << e.what() << std::endl;
     }
 }
 
@@ -49,9 +49,9 @@ std::string PDFImageExtractor::generate_image_filename(int page_index, int image
 
 std::vector<PDFImageExtractor::ImageInfo> PDFImageExtractor::extract_images_from_page(int page_index, const std::string& output_dir) {
     std::vector<ImageInfo> extracted_images;
-    
+
     if (!valid_ || page_index < 0 || page_index >= document_->pages()) {
-        std::cerr << "Invalid page index: " << page_index << std::endl;
+        std::cerr << "Invalid page index : " << page_index << std::endl;
         return extracted_images;
     }
     
