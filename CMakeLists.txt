@@ -9,7 +9,13 @@ pkg_check_modules(POPPLER REQUIRED poppler-cpp)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBZIP REQUIRED libzip)
 
-add_executable(cpluspluscomicconverter src/main.cpp src/pdf_image_extractor.cpp src/cbz_creator.cpp)
+add_executable(cpluspluscomicconverter
+    src/main.cpp
+    src/pdf_image_extractor.cpp
+    src/cbz_creator.cpp
+    src/pdf_creator.cpp
+    src/cbz_to_pdf_converter.cpp
+)
 
 target_link_libraries(cpluspluscomicconverter ${POPPLER_LIBRARIES} ${LIBZIP_LIBRARIES})
 target_include_directories(cpluspluscomicconverter PRIVATE ${POPPLER_INCLUDE_DIRS} ${LIBZIP_INCLUDE_DIRS})

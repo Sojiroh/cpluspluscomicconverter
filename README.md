@@ -1,12 +1,13 @@
 # C++ Comic Converter
 
-A fast C++ command-line tool that converts PDF files into comic book formats. Extract pages as high-quality images or create CBZ archives for comic book readers.
+A fast C++ command-line tool that converts between PDF and CBZ comic book formats. Extract pages as high-quality images, create CBZ archives, or rebuild PDFs from existing CBZ collections.
 
 ## Features
 
 - 🔄 **Single & Batch Processing**: Convert individual PDFs or entire directories
 - 🖼️ **Flexible Image Formats**: JPEG (default) or PNG output with configurable quality and DPI
 - 📚 **CBZ Archive Support**: Create comic book archives compatible with all readers
+- 📄 **CBZ to PDF Conversion**: Turn JPEG-based CBZ archives back into printable PDFs
 - 🧹 **Clean Mode**: Automatically remove temporary files after CBZ creation
 - ⚡ **Fast Processing**: Built with Poppler for efficient PDF rendering
 - 📋 **Progress Tracking**: Clear feedback with success/failure statistics
@@ -61,12 +62,18 @@ cmake --build build
 
 # Batch process entire directory
 ./build/cpluspluscomicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
+
+# Convert CBZ archive back to PDF
+./build/cpluspluscomicconverter comic.cbz ./converted_pdfs --pdf
+
+# Batch process entire directory to PDF
+./build/cpluspluscomicconverter /path/to/cbzs/ ./converted_pdfs --pdf
 ```
 
 ### Command Line Options
 
 ```
-Usage: cpluspluscomicconverter <pdf_file_or_directory> [output_directory] [options]
+Usage: cpluspluscomicconverter <input_file_or_directory> [output_directory] [options]
 
 Options:
   --cbz                Create a CBZ (Comic Book Archive) file instead of separate images
@@ -74,12 +81,14 @@ Options:
   --format <format>    Output format: png or jpeg (default: jpeg)
   --quality <1-100>    JPEG quality (default: 80, ignored for PNG)
   --dpi <value>        DPI for image extraction (default: 150)
+  --pdf                Convert CBZ archives to PDF documents (JPEG pages only)
 
 Examples:
   cpluspluscomicconverter document.pdf ./extracted_images
   cpluspluscomicconverter /path/to/pdfs/ ./converted_comics --cbz --clean
   cpluspluscomicconverter document.pdf ./output --format png --dpi 300
   cpluspluscomicconverter document.pdf ./output --format jpeg --quality 90 --dpi 150
+  cpluspluscomicconverter comic.cbz ./converted_pdfs --pdf
 ```
 
 ## Output Formats
@@ -97,6 +106,12 @@ Examples:
 - **Page Order**: Natural sorting (page1, page2, ..., page10, page11)
 - **Compression**: Optimized for file size and loading speed
 
+### CBZ to PDF
+- **Input**: CBZ archives containing JPEG pages (other formats are skipped)
+- **Output**: Single PDF mirroring image dimensions per page
+- **Order**: Natural sorting based on file names inside the archive
+- **Limitations**: Images that are not JPEG are ignored; ensure archives contain JPEG pages for best results
+
 
 ## Performance
 
@@ -108,10 +123,12 @@ Typical performance on modern hardware:
 
 ## Architecture
 
-The tool consists of three main components:
+The tool consists of several components:
 
 - **PDFImageExtractor**: Handles PDF loading and page rendering using Poppler
 - **CBZCreator**: Creates ZIP archives with proper comic book formatting
+- **PDFCreator**: Generates PDF files from JPEG image streams
+- **CBZToPDFConverter**: Reads CBZ archives and prepares images for PDF creation
 - **Main Application**: Command-line interface with batch processing support
 
 ## Troubleshooting
@@ -146,10 +163,6 @@ The tool offers several ways to reduce output file sizes:
 - **Quality Control**: Lower quality (30-60) for web comics, higher (80-95) for print
 - **DPI Adjustment**: Lower DPI (75-100) for screen reading, higher (200-300) for print
 - **Format Comparison**: JPEG at quality 80 is typically 50-90% smaller than PNG
-
-## Future Features
-
-- [ ] Convert from CBZ to PDF (reverse operation)
 
 ## Contributing
 
