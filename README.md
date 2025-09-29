@@ -10,7 +10,7 @@ A fast C++ command-line tool that converts between PDF and CBZ comic book format
 - 📄 **CBZ to PDF Conversion**: Turn JPEG-based CBZ archives back into printable PDFs
 - 🧹 **Clean Mode**: Automatically remove temporary files after CBZ creation
 - ⚡ **Fast Processing**: Built with Poppler for efficient PDF rendering
-- 📋 **Progress Tracking**: Clear feedback with success/failure statistics
+- 📋 **Progress Tracking**: Clear feedback with success/failure statistics 
 
 ## Installation
 
