@@ -10,7 +10,7 @@ A fast C++ command-line tool that converts between PDF and CBZ comic book format
 - 📄 **CBZ to PDF Conversion**: Turn JPEG-based CBZ archives back into printable PDFs
 - 🧹 **Clean Mode**: Automatically remove temporary files after CBZ creation
 - ⚡ **Fast Processing**: Built with Poppler for efficient PDF rendering
-- 📋 **Progress Tracking**: Clear feedback with success/failure statistics
+- 📋 **Progress Tracking**: Clear feedback with success/failure statistics 
 
 ## Installation
 
@@ -39,6 +39,25 @@ cd cpluspluscomicconverter
 cmake -B build -S .
 cmake --build build
 ```
+
+### Optional GUI Build
+
+The desktop interface requires Qt (Qt 6.5+ recommended, Qt 5.15 supported). Point CMake at your Qt installation and enable the GUI target:
+
+```bash
+cmake -B build -S . -DENABLE_GUI=ON -DQt6_DIR=/path/to/Qt/6.x/gcc_64/lib/cmake/Qt6
+cmake --build build --target cpluspluscomicconverter_gui
+```
+
+On macOS with Homebrew:
+
+```bash
+brew install qt
+cmake -B build -S . -DENABLE_GUI=ON -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+cmake --build build --target cpluspluscomicconverter_gui
+```
+
+Launch the GUI with `./build/cpluspluscomicconverter_gui` to batch PDF→CBZ conversions or CBZ→PDF rebuilds using the existing conversion engine.
 
 ## Usage
 

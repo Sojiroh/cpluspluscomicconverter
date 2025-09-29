@@ -1,137 +1,10 @@
+#include <algorithm>
+#include <filesystem>
 #include <iostream>
 #include <string>
-#include <filesystem>
 #include <vector>
-#include <algorithm>
-#include <cctype>
-#include "pdf_image_extractor.h"
-#include "cbz_creator.h"
-#include "cbz_to_pdf_converter.h"
 
-std::vector<std::string> find_pdf_files(const std::string& directory) {
-    std::vector<std::string> pdf_files;
-    
-    try {
-        for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-            if (entry.is_regular_file()) {
-                std::string extension = entry.path().extension().string();
-                std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-                
-                if (extension == ".pdf") {
-                    pdf_files.push_back(entry.path().string());
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Error reading directory: " << e.what() << std::endl;
-    }
-    
-    // Sort files alphabetically
-    std::sort(pdf_files.begin(), pdf_files.end());
-    
-    return pdf_files;
-}
-
-std::vector<std::string> find_cbz_files(const std::string& directory) {
-    std::vector<std::string> cbz_files;
-
-    try {
-        for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-            if (entry.is_regular_file()) {
-                std::string extension = entry.path().extension().string();
-                std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-                if (extension == ".cbz") {
-                    cbz_files.push_back(entry.path().string());
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Error reading directory: " << e.what() << std::endl;
-    }
-
-    std::sort(cbz_files.begin(), cbz_files.end());
-    return cbz_files;
-}
-
-bool process_single_pdf(const std::string& pdf_path, const std::string& base_output_dir,
-                       bool create_cbz, bool clean_images, const std::string& format,
-                       int quality, double dpi) {
-    std::string pdf_name = std::filesystem::path(pdf_path).stem().string();
-    std::string output_dir = std::filesystem::path(base_output_dir) / pdf_name;
-    
-    std::cout << "\n" << std::string(50, '=') << std::endl;
-    std::cout << "Processing: " << pdf_path << std::endl;
-    std::cout << "Output directory: " << output_dir << std::endl;
-    
-    PDFImageExtractor extractor(pdf_path, format, quality, dpi);
-    
-    if (!extractor.is_valid()) {
-        std::cerr << "Error: Could not load PDF file: " << pdf_path << std::endl;
-        return false;
-    }
-    
-    std::cout << "PDF loaded successfully! Total pages: " << extractor.get_page_count() << std::endl;
-    
-    auto extracted_images = extractor.extract_all_images(output_dir);
-    
-    if (extracted_images.empty()) {
-        std::cout << "No images found in the PDF." << std::endl;
-        return false;
-    }
-    
-    std::cout << "Extracted " << extracted_images.size() << " images" << std::endl;
-    
-    if (create_cbz) {
-        std::string cbz_filename = pdf_name + ".cbz";
-        std::string cbz_path = std::filesystem::path(base_output_dir) / cbz_filename;
-        
-        std::cout << "Creating CBZ archive..." << std::endl;
-        if (CBZCreator::create_cbz_from_directory(output_dir, cbz_path)) {
-            std::cout << "CBZ file created: " << cbz_path << std::endl;
-            
-            if (clean_images) {
-                std::cout << "Cleaning up individual image files..." << std::endl;
-                try {
-                    std::filesystem::remove_all(output_dir);
-                    std::cout << "Cleanup complete!" << std::endl;
-                } catch (const std::exception& e) {
-                    std::cerr << "Warning: Failed to clean up: " << e.what() << std::endl;
-                }
-            }
-        } else {
-            std::cerr << "Failed to create CBZ archive for: " << pdf_path << std::endl;
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-bool process_single_cbz(const std::string& cbz_path, const std::string& base_output_dir) {
-    std::string cbz_name = std::filesystem::path(cbz_path).stem().string();
-    std::filesystem::path output_directory(base_output_dir);
-    if (!output_directory.empty()) {
-        std::error_code ec;
-        std::filesystem::create_directories(output_directory, ec);
-        if (ec) {
-            std::cerr << "Error creating output directory: " << ec.message() << std::endl;
-            return false;
-        }
-    }
-
-    std::filesystem::path output_pdf = output_directory / (cbz_name + ".pdf");
-
-    std::cout << "\n" << std::string(50, '=') << std::endl;
-    std::cout << "Processing CBZ: " << cbz_path << std::endl;
-    std::cout << "Output PDF: " << output_pdf.string() << std::endl;
-
-    if (!CBZToPDFConverter::convert_cbz_to_pdf(cbz_path, output_pdf.string())) {
-        return false;
-    }
-
-    return true;
-}
+#include "converter_service.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -213,11 +86,11 @@ int main(int argc, char* argv[]) {
     int failed = 0;
     
     if (output_pdf) {
-        std::vector<std::string> cbz_files;
+        std::vector<std::filesystem::path> cbz_files;
 
         if (std::filesystem::is_directory(input_path)) {
             std::cout << "Input directory: " << input_path << std::endl;
-            cbz_files = find_cbz_files(input_path);
+            cbz_files = ConverterService::FindCbzFiles(input_path);
 
             if (cbz_files.empty()) {
                 std::cerr << "No CBZ files found in directory: " << input_path << std::endl;
@@ -233,7 +106,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             std::cout << "Input file: " << input_path << std::endl;
-            cbz_files.push_back(input_path);
+            cbz_files.emplace_back(input_path);
         } else {
             std::cerr << "Error: Input path does not exist or is not accessible: " << input_path << std::endl;
             return 1;
@@ -243,18 +116,18 @@ int main(int argc, char* argv[]) {
         std::cout << "Mode: PDF output" << std::endl;
 
         for (const auto& cbz_path : cbz_files) {
-            if (process_single_cbz(cbz_path, output_dir)) {
+            if (ConverterService::ConvertSingleCbz(cbz_path, output_dir)) {
                 successful++;
             } else {
                 failed++;
             }
         }
     } else {
-        std::vector<std::string> pdf_files;
+        std::vector<std::filesystem::path> pdf_files;
 
         if (std::filesystem::is_directory(input_path)) {
             std::cout << "Input directory: " << input_path << std::endl;
-            pdf_files = find_pdf_files(input_path);
+            pdf_files = ConverterService::FindPdfFiles(input_path);
 
             if (pdf_files.empty()) {
                 std::cerr << "No PDF files found in directory: " << input_path << std::endl;
@@ -270,7 +143,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             std::cout << "Input PDF: " << input_path << std::endl;
-            pdf_files.push_back(input_path);
+            pdf_files.emplace_back(input_path);
         } else {
             std::cerr << "Error: Input path does not exist or is not accessible: " << input_path << std::endl;
             return 1;
@@ -292,8 +165,15 @@ int main(int argc, char* argv[]) {
             std::cout << "Output format: Individual " << format << " images" << std::endl;
         }
 
+        PdfConversionOptions pdf_options;
+        pdf_options.create_cbz = create_cbz;
+        pdf_options.clean_images = clean_images;
+        pdf_options.format = format;
+        pdf_options.quality = quality;
+        pdf_options.dpi = dpi;
+
         for (const auto& pdf_path : pdf_files) {
-            if (process_single_pdf(pdf_path, output_dir, create_cbz, clean_images, format, quality, dpi)) {
+            if (ConverterService::ConvertSinglePdf(pdf_path, output_dir, pdf_options)) {
                 successful++;
             } else {
                 failed++;
